@@ -6,11 +6,11 @@ export const config = {
   },
   langbase: {
     apiKey: process.env.LANGBASE_API_KEY || '',
-    pipeId: process.env.LANGBASE_PIPE_ID || '',
-    baseURL: 'https://api.langbase.com/v1',
+    // Note: In the new Langbase SDK, the API key IS the pipe identifier
+    // Format: pipe_3tZ1GPNL7dRnijF7GxNgXMJNT3MNEKzryvqQGPP7jQcLhdJodXuRhZdacQXvfgKw1nWA13SUW4sKv8tooiYrHCzt
   },
   daytona: {
-    apiUrl: process.env.DAYTONA_API_URL || 'https://api.daytona.io',
+    apiUrl: process.env.DAYTONA_API_URL || 'https://api.daytona.io/app',
     apiKey: process.env.DAYTONA_API_KEY || '',
   },
   database: {
