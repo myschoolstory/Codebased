@@ -31,11 +31,47 @@ export class LangbaseService {
       });
 
       // Handle the response
-      const content = response.completion || response.choices?.[0]?.message?.content || '';
+      console.log('Langbase raw response:', response);
+      let content = response.completion || response.choices?.[0]?.message?.content || '';
+      if (!content && typeof response === 'string') {
+        content = response;
+      }
+      // If still no content, try to find a string property that looks like JSON
+      if (!content && typeof response === 'object') {
+        for (const [key, value] of Object.entries(response)) {
+          if (typeof value === 'string' && value.trim().startsWith('{')) {
+            content = value;
+            break;
+          }
+        }
+        if (!content) {
+          content = JSON.stringify(response);
+        }
+      }
       
       try {
-    const cleaned = content.trim().replace(/^data:\s*/, '');
-    const parsed = JSON.parse(cleaned);
+        let cleaned = content.trim();
+        let parsed = null;
+        // Try to parse the whole response first (plain JSON)
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch {}
+        // If not valid, try to parse any 'data:' line as JSON
+        if (!parsed) {
+          const lines = cleaned.split('\n');
+          const dataLines = lines.filter(line => line.startsWith('data:'));
+          console.log('Langbase data: lines:', dataLines);
+          for (const line of dataLines) {
+            const jsonStr = line.replace(/^data:\s*/, '');
+            if (jsonStr.trim().startsWith('{')) {
+              try {
+                parsed = JSON.parse(jsonStr);
+                break;
+              } catch {}
+            }
+          }
+        }
+        if (!parsed) throw new Error('No valid JSON found in Langbase response');
         return {
           plan: parsed.plan || 'Generated development plan',
           steps: parsed.steps || []
@@ -90,7 +126,23 @@ export class LangbaseService {
       const content = response.completion || response.choices?.[0]?.message?.content || '';
       
       try {
-        const parsed = JSON.parse(content);
+        let cleaned = content.trim();
+        let parsed = null;
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch {}
+        if (!parsed) {
+          const lines = cleaned.split('\n');
+          for (const line of lines) {
+            if (line.trim().startsWith('{')) {
+              try {
+                parsed = JSON.parse(line.trim());
+                break;
+              } catch {}
+            }
+          }
+        }
+        if (!parsed) throw new Error('No valid JSON found in Langbase response');
         return {
           isValid: parsed.isValid || false,
           issues: parsed.issues || [],
@@ -141,7 +193,23 @@ export class LangbaseService {
       const responseContent = response.completion || response.choices?.[0]?.message?.content || '';
       
       try {
-        const parsed = JSON.parse(responseContent);
+        let cleaned = responseContent.trim();
+        let parsed = null;
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch {}
+        if (!parsed) {
+          const lines = cleaned.split('\n');
+          for (const line of lines) {
+            if (line.trim().startsWith('{')) {
+              try {
+                parsed = JSON.parse(line.trim());
+                break;
+              } catch {}
+            }
+          }
+        }
+        if (!parsed) throw new Error('No valid JSON found in Langbase response');
         return {
           optimizedContent: parsed.optimizedContent || content,
           changes: parsed.changes || []

@@ -28,16 +28,29 @@ export class MistralService {
       });
 
       const content = response.choices[0]?.message?.content;
-      
+      console.log('Raw Mistral response:', response);
       if (!content) {
         throw new Error('No content received from Mistral');
       }
 
       // Handle both string and array content types
       const contentString = typeof content === 'string' ? content : JSON.stringify(content);
-
-      // Parse the JSON response
-      const parsed = JSON.parse(contentString);
+      let parsed = null;
+      try {
+        parsed = JSON.parse(contentString);
+      } catch {}
+      if (!parsed) {
+        const lines = contentString.split('\n');
+        for (const line of lines) {
+          if (line.trim().startsWith('{')) {
+            try {
+              parsed = JSON.parse(line.trim());
+              break;
+            } catch {}
+          }
+        }
+      }
+      if (!parsed) throw new Error('No valid JSON found in Mistral response');
       return parsed.files || [];
     } catch (error) {
       console.error('Error generating codebase with Mistral:', error);
